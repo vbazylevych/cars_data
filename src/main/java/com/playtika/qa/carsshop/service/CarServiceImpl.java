@@ -2,12 +2,13 @@ package com.playtika.qa.carsshop.service;
 
 
 import com.playtika.qa.carsshop.dao.entity.*;
+import com.playtika.qa.carsshop.dao.entity.repo.AdsEntityRepository;
+import com.playtika.qa.carsshop.dao.entity.repo.CarEntityRepository;
 import com.playtika.qa.carsshop.domain.Car;
 import com.playtika.qa.carsshop.domain.CarInStore;
 import com.playtika.qa.carsshop.domain.CarInfo;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;

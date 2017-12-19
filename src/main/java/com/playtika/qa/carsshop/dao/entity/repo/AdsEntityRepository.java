@@ -1,6 +1,7 @@
-package com.playtika.qa.carsshop.dao.entity;
+package com.playtika.qa.carsshop.dao.entity.repo;
 
 
+import com.playtika.qa.carsshop.dao.entity.AdsEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 

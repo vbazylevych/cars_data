@@ -1,10 +1,11 @@
 package com.playtika.qa.carsshop.service;
 
 import com.playtika.qa.carsshop.dao.entity.*;
+import com.playtika.qa.carsshop.dao.entity.repo.AdsEntityRepository;
+import com.playtika.qa.carsshop.dao.entity.repo.CarEntityRepository;
 import com.playtika.qa.carsshop.domain.Car;
 import com.playtika.qa.carsshop.domain.CarInStore;
 import com.playtika.qa.carsshop.domain.CarInfo;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -13,6 +14,8 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.*;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.*;
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.junit.Assert.*;
@@ -23,23 +26,25 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class CarServiceImplTests {
 
-   @InjectMocks
-    private CarServiceImpl carServiceImpl;
+    @InjectMocks
+    private CarServiceImpl service;
     @Mock
-    private AdsEntityRepository adsEntityRepository;
+    private AdsEntityRepository adsRepository;
     @Mock
-    private CarEntityRepository carEntityRepository;
+    private CarEntityRepository carRepository;
+
+    CarInStore first = new CarInStore(new Car(1L, "xxx"), new CarInfo(1, "Sema"));
 
     @Test
     public void addNewAdsThenCarIsAbsent() {
-        CarInStore first = new CarInStore(new Car(1L, "xxx"), new CarInfo(1, "Sema"));
+
         CarEntity carEntity = createCarEntity(first, 1L);
         AdsEntity firstAds = createAdsEntities(first, createUserEntity(first), carEntity);
         firstAds.setId(1L);
 
-        when(carEntityRepository.findByPlateNumber("xxx")).thenReturn(Collections.EMPTY_LIST);
-        when(adsEntityRepository.save(notNull(AdsEntity.class))).thenReturn(firstAds);
-        CarInStore resalt = carServiceImpl.add(first);
+        when(carRepository.findByPlateNumber("xxx")).thenReturn(EMPTY_LIST);
+        when(adsRepository.save(notNull(AdsEntity.class))).thenReturn(firstAds);
+        CarInStore resalt = service.add(first);
 
         assertThat(resalt.getCar().getPlateNumber(), is("xxx"));
         assertThat(resalt.getCarInfo().getPrice(), is(1));
@@ -48,43 +53,41 @@ public class CarServiceImplTests {
 
     @Test
     public void addNewAdsThenCarIsPresentAndClosedAdsExist() {
-        CarInStore first = new CarInStore(new Car(1L, "xxx"), new CarInfo(1, "Sema"));
+
         CarEntity carEntity = createCarEntity(first, 1L);
-        List<CarEntity> carEntityList = new ArrayList<>();
-        carEntityList.add(carEntity);
         AdsEntity firstAds = createAdsEntities(first, createUserEntity(first), carEntity);
         firstAds.setId(1L);
 
-        when(carEntityRepository.findByPlateNumber("xxx")).thenReturn(carEntityList);
-        when(adsEntityRepository.findByCarIdAndDealIsNull(1L)).thenReturn(Collections.EMPTY_LIST);
+        when(carRepository.findByPlateNumber("xxx")).thenReturn(asList(carEntity));
+        when(adsRepository.findByCarIdAndDealIsNull(1L)).thenReturn(EMPTY_LIST);
 
-        when(adsEntityRepository.save(notNull(AdsEntity.class))).thenReturn(firstAds);
-        CarInStore resalt = carServiceImpl.add(first);
+        when(adsRepository.save(notNull(AdsEntity.class))).thenReturn(firstAds);
+        CarInStore resalt = service.add(first);
 
         assertThat(resalt.getCar().getPlateNumber(), is("xxx"));
         assertThat(resalt.getCarInfo().getPrice(), is(1));
         assertThat(resalt.getCarInfo().getContact(), is("Sema"));
     }
+
     @Test(expected = IllegalArgumentException.class)
     public void addNewAdsThenCarIsPresentAndOpenAdsExistThrowsException() {
-        CarInStore first = new CarInStore(new Car(1L, "xxx"), new CarInfo(1, "Sema"));
+
         CarEntity carEntity = createCarEntity(first, 1L);
-        List<CarEntity> carEntityList = new ArrayList<>();
-        carEntityList.add(carEntity);
         AdsEntity firstAds = createAdsEntities(first, createUserEntity(first), carEntity);
         firstAds.setId(1L);
         List<AdsEntity> adsList = new ArrayList<>();
         adsList.add(firstAds);
 
-        when(carEntityRepository.findByPlateNumber("xxx")).thenReturn(carEntityList);
-        when(adsEntityRepository.findByCarIdAndDealIsNull(1L)).thenReturn(adsList);
+        when(carRepository.findByPlateNumber("xxx")).thenReturn(asList(carEntity));
+        when(adsRepository.findByCarIdAndDealIsNull(1L)).thenReturn(adsList);
 
-        when(adsEntityRepository.save(notNull(AdsEntity.class))).thenReturn(firstAds);
-        CarInStore resalt = carServiceImpl.add(first);
+        when(adsRepository.save(notNull(AdsEntity.class))).thenReturn(firstAds);
+        CarInStore resalt = service.add(first);
     }
+
     @Test
     public void allCarsReturnsListOfAdsIfPresent() {
-        CarInStore first = new CarInStore(new Car(1L, "1"), new CarInfo(1, "с1"));
+
         CarInStore second = new CarInStore(new Car(2L, "2"), new CarInfo(2, "с2"));
 
         AdsEntity firstAds = createAdsEntities(first, createUserEntity(first), createCarEntity(first, 1L));
@@ -94,8 +97,8 @@ public class CarServiceImplTests {
         result.add(firstAds);
         result.add(secondAds);
 
-        when(adsEntityRepository.findByDealIsNull()).thenReturn(result);
-        Collection<CarInStore> allCars = carServiceImpl.getAll();
+        when(adsRepository.findByDealIsNull()).thenReturn(result);
+        Collection<CarInStore> allCars = service.getAll();
         assertThat(allCars.size(), is(2));
         assertThat(allCars, hasItem(first));
         assertThat(allCars, hasItem(second));
@@ -103,33 +106,30 @@ public class CarServiceImplTests {
 
     @Test
     public void allCarsReturnsEmptyResponseIfRepositoryIsEmpty() {
-        when(adsEntityRepository.findByDealIsNull()).thenReturn(Collections.EMPTY_LIST);
-        assertThat(carServiceImpl.getAll(), is(empty()));
+        when(adsRepository.findByDealIsNull()).thenReturn(EMPTY_LIST);
+        assertThat(service.getAll(), is(empty()));
     }
 
     @Test
     public void getCarReturnsAppropriateCarInfo() {
-        CarInStore first = new CarInStore(new Car(1L, "1"), new CarInfo(1, "Sema"));
+
         AdsEntity firstAds = createAdsEntities(first, createUserEntity(first), createCarEntity(first, 1L));
-        List<AdsEntity> result = new ArrayList<>();
-        result.add(firstAds);
+        when(adsRepository.findByCarIdAndDealIsNull(1)).thenReturn(asList(firstAds));
 
-        when(adsEntityRepository.findByCarIdAndDealIsNull(1)).thenReturn(result);
-
-        assertThat(1, is(carServiceImpl.get(1).get().getCarInfo().getPrice()));
-        assertThat("Sema", is(carServiceImpl.get(1).get().getCarInfo().getContact()));
+        assertThat(1, is(service.get(1).get().getCarInfo().getPrice()));
+        assertThat("Sema", is(service.get(1).get().getCarInfo().getContact()));
     }
 
     @Test
     public void getCarReturnsEmptyResponseIfCarIsAbsent() {
-        when(adsEntityRepository.findByCarIdAndDealIsNull(1)).thenReturn(Collections.EMPTY_LIST);
-        assertFalse(carServiceImpl.get(1).isPresent());
+        when(adsRepository.findByCarIdAndDealIsNull(1)).thenReturn(EMPTY_LIST);
+        assertFalse(service.get(1).isPresent());
     }
 
     @Test
     public void deleteCarCallsDaoDeleteMethod() {
-        carServiceImpl.delete(1L);
-        verify(carEntityRepository).delete(1L);
+        service.delete(1L);
+        verify(carRepository).delete(1L);
     }
 
     private AdsEntity createAdsEntities(CarInStore carInStore, UserEntity user, CarEntity car) {

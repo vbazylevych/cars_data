@@ -4,7 +4,7 @@ import com.github.database.rider.core.api.configuration.DBUnit;
 import com.github.database.rider.core.api.dataset.DataSet;
 import com.github.database.rider.core.api.dataset.ExpectedDataSet;
 import com.playtika.qa.carsshop.dao.entity.AdsEntity;
-import com.playtika.qa.carsshop.dao.entity.AdsEntityRepository;
+import com.playtika.qa.carsshop.dao.entity.repo.AdsEntityRepository;
 import com.playtika.qa.carsshop.dao.entity.CarEntity;
 import com.playtika.qa.carsshop.dao.entity.UserEntity;
 import org.hamcrest.Matchers;
@@ -42,13 +42,13 @@ public class AdsRepositoryTest extends AbstractDaoTest<AdsEntityRepository> {
     @DataSet(value = "empty-ads-table.xml", disableConstraints = true, useSequenceFiltering = false)
     @DBUnit(allowEmptyFields = true)
     public void findByCarIdReturnsEmptyListIfTableIsEmpty() {
-        assertThat(dao.findByCarIdAndDealIsNull(1), Matchers.is(empty()));
+        assertThat(dao.findByCarIdAndDealIsNull(1), is(empty()));
     }
     @Test
     @DataSet(value = "only-closed-ads-table.xml", disableConstraints = true, useSequenceFiltering = false)
     @DBUnit(allowEmptyFields = true)
     public void findByCarIdReturnsEmptyListIfOnlyClosedAds() {
-        assertThat(dao.findByCarIdAndDealIsNull(1), Matchers.is(empty()));
+        assertThat(dao.findByCarIdAndDealIsNull(1), is(empty()));
     }
     @Test
     @DataSet(value = "filled-ads-table.xml", disableConstraints = true, useSequenceFiltering = false)

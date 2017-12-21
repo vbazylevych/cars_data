@@ -27,7 +27,7 @@ public class SwaggerConfig {
 
     private ApiInfo apiInfo() {
         return new ApiInfoBuilder()
-                .title("Car Service")
+                .title("Car shop API")
                 .version("1.0").build();
     }
 }

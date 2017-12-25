@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
 
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+
 
 @Slf4j
 @RestController
@@ -29,7 +31,7 @@ public class CarController {
             @ApiResponse(code = 200, message = "Successfully opened ads"),
             @ApiResponse(code = 400, message = "Bad request"),
             @ApiResponse(code = 500, message = "Car already selling")})
-    @PostMapping(value = "/cars", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/cars", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
     public long createCar(@RequestParam("price") int price,
                           @RequestParam("contact") String contactDetails,
                           @RequestBody Car car) {
@@ -37,7 +39,6 @@ public class CarController {
 
         CarInStore carInStore = new CarInStore(car, new CarInfo(price, contactDetails));
         return service.add(carInStore).getCar().getId();
-
     }
 
     @ApiOperation("Returns info about specified car")
@@ -45,7 +46,7 @@ public class CarController {
             @ApiResponse(code = 200, message = "Successfully returned ads info"),
             @ApiResponse(code = 400, message = "Bad request"),
             @ApiResponse(code = 404, message = "Car not found")})
-    @GetMapping(value = "/cars/{id}")
+    @GetMapping(value = "/cars/{id}", produces = APPLICATION_JSON_VALUE)
     public CarInfo getCar(@PathVariable(value = "id") long id) throws NotFoundException {
         log.info("get request with id {} received", id);
 
@@ -58,7 +59,7 @@ public class CarController {
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully returned ads"),
             @ApiResponse(code = 400, message = "Bad request")})
-    @GetMapping("/cars")
+    @GetMapping(value = "/cars", produces = APPLICATION_JSON_VALUE)
     public Collection<CarInStore> getAllCars() {
         log.info("Get all cars request was received");
         return service.getAll();

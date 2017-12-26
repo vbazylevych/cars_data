@@ -7,6 +7,7 @@ import com.playtika.qa.carsshop.dao.entity.repo.CarEntityRepository;
 import com.playtika.qa.carsshop.domain.Car;
 import com.playtika.qa.carsshop.domain.CarInStore;
 import com.playtika.qa.carsshop.domain.CarInfo;
+import com.playtika.qa.carsshop.web.CarAlreadyOnSalingException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -38,7 +39,7 @@ public class CarServiceImpl implements CarService {
         }
         CarEntity foundCar = carEntities.get(0);
         if (findOpenAdsByCarId(foundCar.getId()).size() > 0) {
-            throw new IllegalArgumentException("Car already selling!");
+            throw new CarAlreadyOnSalingException("Car already selling!");
         }
         UserEntity newUserEntity = createUserEntity(carInStore);
         AdsEntity newAds = createAndSaveAdsEntities(carInStore, newUserEntity, foundCar);

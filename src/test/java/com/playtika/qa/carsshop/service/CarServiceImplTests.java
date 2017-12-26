@@ -6,6 +6,7 @@ import com.playtika.qa.carsshop.dao.entity.repo.CarEntityRepository;
 import com.playtika.qa.carsshop.domain.Car;
 import com.playtika.qa.carsshop.domain.CarInStore;
 import com.playtika.qa.carsshop.domain.CarInfo;
+import com.playtika.qa.carsshop.web.CarAlreadyOnSalingException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -69,7 +70,7 @@ public class CarServiceImplTests {
         assertThat(resalt.getCarInfo().getContact(), is("Sema"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = CarAlreadyOnSalingException.class)
     public void addNewAdsThenCarIsPresentAndOpenAdsExistThrowsException() {
 
         CarEntity carEntity = createCarEntity(first, 1L);

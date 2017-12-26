@@ -30,7 +30,7 @@ public class CarController {
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Successfully opened ads"),
             @ApiResponse(code = 400, message = "Bad request"),
-            @ApiResponse(code = 208, message = "Car already selling")})
+            @ApiResponse(code = 302, message = "Car already selling")})
     @PostMapping(value = "/cars", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
     public long createCar(@RequestParam("price") int price,
                           @RequestParam("contact") String contactDetails,

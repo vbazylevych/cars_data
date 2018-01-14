@@ -71,14 +71,6 @@ public class CarServiceImpl implements CarService {
         carRepository.delete(id);
     }
 
-    private CarInStore getCarInStoreFromAds(AdsEntity ads) {
-        CarEntity carEntity = ads.getCar();
-        Car car = new Car(carEntity.getId(), carEntity.getPlateNumber(),
-                carEntity.getModel(), carEntity.getColor(), carEntity.getYear());
-        CarInfo carInfo = new CarInfo(ads.getPrice(), ads.getUser().getContact());
-        return new CarInStore(car, carInfo);
-    }
-
     @Override
     public long openNewDeal(User user, int price, long adsId) {
         AdsEntity adsEntity = adsRepository.findOne(adsId);
@@ -165,11 +157,20 @@ public class CarServiceImpl implements CarService {
     }
 
     private void closeAds(long id) {
+
     }
 
     DealEntity findTheBestDeal(long id) {
         return dealRepository.findByAdsId(id).stream()
                 .max(Comparator.comparing(DealEntity::getPrice))
                 .orElseThrow(() -> new NotFoundException("You haven't any deals!"));
+    }
+
+    private CarInStore getCarInStoreFromAds(AdsEntity ads) {
+        CarEntity carEntity = ads.getCar();
+        Car car = new Car(carEntity.getId(), carEntity.getPlateNumber(),
+                carEntity.getModel(), carEntity.getColor(), carEntity.getYear());
+        CarInfo carInfo = new CarInfo(ads.getPrice(), ads.getUser().getContact());
+        return new CarInStore(car, carInfo);
     }
 }

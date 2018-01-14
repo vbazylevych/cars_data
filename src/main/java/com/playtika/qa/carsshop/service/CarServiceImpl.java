@@ -6,11 +6,7 @@ import com.playtika.qa.carsshop.dao.entity.repo.AdsEntityRepository;
 import com.playtika.qa.carsshop.dao.entity.repo.CarEntityRepository;
 import com.playtika.qa.carsshop.dao.entity.repo.DealEntityRepository;
 import com.playtika.qa.carsshop.dao.entity.repo.UserEntityRepository;
-import com.playtika.qa.carsshop.domain.Car;
-import com.playtika.qa.carsshop.domain.CarInStore;
-import com.playtika.qa.carsshop.domain.CarInfo;
-import com.playtika.qa.carsshop.domain.User;
-import com.playtika.qa.carsshop.web.CantRejectAcceptedDeal;
+import com.playtika.qa.carsshop.domain.*;
 import com.playtika.qa.carsshop.web.CarAlreadyOnSalingException;
 import com.playtika.qa.carsshop.web.NotFoundException;
 import lombok.AllArgsConstructor;
@@ -25,7 +21,6 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 @Service
 public class CarServiceImpl implements CarService {
-
 
     private AdsEntityRepository adsRepository;
     private CarEntityRepository carRepository;
@@ -104,12 +99,19 @@ public class CarServiceImpl implements CarService {
     public void rejectDeal(long id) {
         DealEntity foundDeal = dealRepository.findOne(id);
         if (foundDeal == null) {
-            throw new NotFoundException("Deal not found!");
-        }
-        if (foundDeal.getStatus() == DealEntity.Status.ACCEPTED) {
-            throw new CantRejectAcceptedDeal("Can't reject accepted deal");
+            throw new NotFoundException("BestDealResponse not found!");
         }
         dealRepository.rejectDeal(id);
+    }
+
+    @Override
+    public BestDealResponse acceptTheBestDeal(long id) {
+        if (adsRepository.findOne(id) == null) {
+            throw new NotFoundException("Ads not found!");
+        }
+        DealEntity bestDeal = findTheBestDeal(id);
+        closeAds(id);
+        return createBestDealResponse(bestDeal);
     }
 
     private AdsEntity createAndSaveAdsEntities(CarInStore carInStore, UserEntity user, CarEntity car) {
@@ -151,5 +153,23 @@ public class CarServiceImpl implements CarService {
     private UserEntity createAndSaveUserEntity(User user) {
         UserEntity userEntity = new UserEntity(user.getName(), user.getSurname(), user.getContact());
         return userRepository.save(userEntity);
+    }
+
+    private BestDealResponse createBestDealResponse(DealEntity deal) {
+        User user = transformUserEntityToUser(deal.getUser());
+        return new BestDealResponse(user, deal.getPrice(), deal.getId());
+    }
+
+    private User transformUserEntityToUser(UserEntity userEntity) {
+        return new User(userEntity.getName(), userEntity.getSurname(), userEntity.getContact());
+    }
+
+    private void closeAds(long id) {
+    }
+
+    DealEntity findTheBestDeal(long id) {
+        return dealRepository.findByAdsId(id).stream()
+                .max(Comparator.comparing(DealEntity::getPrice))
+                .orElseThrow(() -> new NotFoundException("You haven't any deals!"));
     }
 }

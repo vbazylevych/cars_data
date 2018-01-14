@@ -1,6 +1,7 @@
 package com.playtika.qa.carsshop.service;
 
 import com.playtika.qa.carsshop.domain.CarInStore;
+import com.playtika.qa.carsshop.domain.BestDealResponse;
 import com.playtika.qa.carsshop.domain.User;
 
 import java.util.Optional;
@@ -20,4 +21,6 @@ public interface CarService {
     long openNewDeal(User user, int price, long adsId);
 
     void rejectDeal(long id);
+
+    BestDealResponse acceptTheBestDeal(long id);
 }

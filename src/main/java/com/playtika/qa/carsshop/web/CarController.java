@@ -3,6 +3,7 @@ package com.playtika.qa.carsshop.web;
 import com.playtika.qa.carsshop.domain.Car;
 import com.playtika.qa.carsshop.domain.CarInStore;
 import com.playtika.qa.carsshop.domain.CarInfo;
+import com.playtika.qa.carsshop.domain.User;
 import com.playtika.qa.carsshop.service.CarService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -10,7 +11,6 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
@@ -72,5 +72,19 @@ public class CarController {
     @DeleteMapping("cars/{id}")
     public void deleteCars(@PathVariable("id") long id) {
         service.delete(id);
+    }
+
+    @PostMapping(value = "/deal", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+    public long createDeal(@RequestParam("price") int price,
+                          @RequestParam("adsId") long adsId,
+                          @RequestBody User user) {
+        log.info("Create new deal request was received");
+        return service.openNewDeal(user, price, adsId);
+    }
+
+    @PostMapping(value = "/deal/reject/{id}", produces = APPLICATION_JSON_VALUE)
+    public void rejectDeal(@PathVariable(value = "id") long id) throws NotFoundException {
+        log.info("reject deal request with id {} received", id);
+        service.rejectDeal(id);
     }
 }

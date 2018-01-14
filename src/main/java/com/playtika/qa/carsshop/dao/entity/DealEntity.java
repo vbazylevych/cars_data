@@ -10,7 +10,6 @@ import javax.persistence.*;
 @Setter
 @NoArgsConstructor
 @Table(name = "deal")
-
 public class DealEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,9 +21,9 @@ public class DealEntity {
     private AdsEntity ads;
 
     public static enum Status {
-        ACTIVATED, DECLINED, ACCEPTED
+        ACTIVATED, REJECTED, ACCEPTED
     }
-    @Column(columnDefinition = "ENUM('ACTIVATED', 'DECLINED', 'ACCEPTED')", nullable = false)
+    @Column(columnDefinition = "ENUM('ACTIVATED', 'REJECTED', 'ACCEPTED')", nullable = false)
     private Status status;
 
     @ManyToOne
@@ -34,6 +33,13 @@ public class DealEntity {
     @Column(nullable = false)
     @Check(constraints = "price > 0")
     private int price;
+
+    public DealEntity(AdsEntity ads, Status status, UserEntity user, int price) {
+        this.ads = ads;
+        this.status = status;
+        this.user = user;
+        this.price = price;
+    }
 }
 
 

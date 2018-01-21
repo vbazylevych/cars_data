@@ -32,11 +32,10 @@ public class AdsEntity {
     @Check(constraints = "price > 0")
     private Integer price;
 
-    @OneToMany(mappedBy = "ads", fetch = FetchType.LAZY)
-    @Column(name = "deal_id", columnDefinition = "BIGINT")
-    private Set<DealEntity> deal;
+    @OneToOne
+    private DealEntity deal;
 
-    public AdsEntity(UserEntity user, CarEntity car, Integer price, Set<DealEntity> deal) {
+    public AdsEntity(UserEntity user, CarEntity car, Integer price, DealEntity deal) {
         this.user = user;
         this.car = car;
         this.price = price;

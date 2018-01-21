@@ -17,6 +17,8 @@ import javax.transaction.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.playtika.qa.carsshop.dao.entity.DealEntity.Status.ACTIVATED;
+
 @Slf4j
 @AllArgsConstructor
 @Service
@@ -91,18 +93,23 @@ public class CarServiceImpl implements CarService {
     public void rejectDeal(long id) {
         DealEntity foundDeal = dealRepository.findOne(id);
         if (foundDeal == null) {
-            throw new NotFoundException("BestDealResponse not found!");
+            throw new NotFoundException("Deal not found!");
         }
-        dealRepository.rejectDeal(id);
+        foundDeal.setStatus(DealEntity.Status.REJECTED);
+        dealRepository.save(foundDeal);
     }
 
     @Override
+    @Transactional
     public BestDealResponse acceptTheBestDeal(long id) {
-        if (adsRepository.findOne(id) == null) {
-            throw new NotFoundException("Ads not found!");
+
+        List<AdsEntity> openAds = adsRepository.findByIdAndDealIsNull(id);
+
+        if (openAds.isEmpty()) {
+            throw new NotFoundException("Open ads with id " + id + " not found!");
         }
         DealEntity bestDeal = findTheBestDeal(id);
-        closeAds(id);
+        closeAds(openAds.get(0), bestDeal);
         return createBestDealResponse(bestDeal);
     }
 
@@ -138,7 +145,7 @@ public class CarServiceImpl implements CarService {
     }
 
     private DealEntity createAndSaveDealEntity(AdsEntity adsEntity, UserEntity userEntity, int price) {
-        DealEntity dealEntity = new DealEntity(adsEntity, DealEntity.Status.ACTIVATED, userEntity, price);
+        DealEntity dealEntity = new DealEntity(adsEntity, ACTIVATED, userEntity, price);
         return dealRepository.save(dealEntity);
     }
 
@@ -156,8 +163,9 @@ public class CarServiceImpl implements CarService {
         return new User(userEntity.getName(), userEntity.getSurname(), userEntity.getContact());
     }
 
-    private void closeAds(long id) {
-
+    private void closeAds(AdsEntity foundAds, DealEntity deal) {
+        foundAds.setDeal(deal);
+        adsRepository.save(foundAds);
     }
 
     DealEntity findTheBestDeal(long id) {

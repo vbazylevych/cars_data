@@ -1,0 +1,8 @@
+<dataset>
+    <ADS  id ="1" user_id="2" car_id="1" price="100500"/>
+    <ADS  id ="2" user_id="2" car_id="1" price="100500"/>
+    <CAR id="1" plate_number="xxx" model="opel" year="2000"/>
+    <USER id="2" name="l" contact="con1"/>
+    <DEAL user_id ="2" price ="100500" ads_id="1"/>
+    <DEAL user_id ="2" price ="100500" ads_id="2"/>
+</dataset>

@@ -1,8 +1,6 @@
 package com.playtika.qa.carsshop.web;
 
-import com.playtika.qa.carsshop.domain.Car;
-import com.playtika.qa.carsshop.domain.CarInStore;
-import com.playtika.qa.carsshop.domain.CarInfo;
+import com.playtika.qa.carsshop.domain.*;
 import com.playtika.qa.carsshop.service.CarService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -17,14 +15,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.*;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @RunWith(SpringRunner.class)
 @WebMvcTest(CarController.class)
@@ -52,6 +47,7 @@ public class CarControllerIntegrationTest {
     @Test
     public void getNotExistingCar() throws Exception {
         when(carService.get(1)).thenReturn(Optional.empty());
+
         mockMvc.perform(get("/cars/1")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
@@ -146,5 +142,101 @@ public class CarControllerIntegrationTest {
                 .accept(MediaType.APPLICATION_JSON)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    public void rejectExistingDealreturnOk() throws Exception {
+        mockMvc.perform(post("/deal/reject/1")
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    public void rejectNotExistingDealReturnNotFound() throws Exception {
+        doThrow(new NotFoundException("Deal not found!"))
+                .when(carService).rejectDeal(1);
+
+        mockMvc.perform(post("/deal/reject/1")
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void acceptBestDealReturnOk() throws Exception {
+        User user = new User("kot", "krot", "con1");
+        BestDealResponse response = new BestDealResponse(user, 100500, 2);
+        when(carService.acceptTheBestDeal(1))
+                .thenReturn(response);
+
+        mockMvc.perform(post("/deal/accept/1")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("application/json;charset=UTF-8"))
+                .andExpect(jsonPath("$.user.name").value("kot"))
+                .andExpect(jsonPath("$.user.surname").value("krot"))
+                .andExpect(jsonPath("$.user.contact").value("con1"))
+                .andExpect(jsonPath("$.price").value(100500))
+                .andExpect(jsonPath("$.id").value(2));
+    }
+
+    @Test
+    public void acceptBestNotExistingDealReturnNotFound() throws Exception {
+        doThrow(new NotFoundException("Open ads with id 1 not found!"))
+                .when(carService).acceptTheBestDeal(1);
+
+        mockMvc.perform(post("/deal/accept/1")
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void rejectDealBadRequest() throws Exception {
+        mockMvc.perform(post("/deal/accept/one")
+                .content("{}")
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void acceptDealBadRequest() throws Exception {
+        mockMvc.perform(post("/deal/accept/two")
+                .content("{}")
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void addDeal() throws Exception {
+
+        when(carService.openNewDeal(any(), anyInt(), anyLong()))
+                .thenReturn(1L);
+
+        String jsonString = "{\"name\": \"kot\", \"surname\": \"krot\", \"contact\": \"con1\"} ";
+        mockMvc.perform(post("/deal/?price=100500&adsId=1")
+                .content(jsonString)
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("application/json;charset=UTF-8"))
+                .andExpect(content().json("1"));
+    }
+
+    @Test
+    public void addDealThrowsNotFound() throws Exception {
+
+        when(carService.openNewDeal(any(), anyInt(), anyLong()))
+                .thenThrow(NotFoundException.class);
+
+        String jsonString = "{\"name\": \"kot\", \"surname\": \"krot\", \"contact\": \"con1\"} ";
+        mockMvc.perform(post("/deal/?price=100500&adsId=1")
+                .content(jsonString)
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
     }
 }

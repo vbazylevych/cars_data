@@ -1,7 +1,10 @@
 package com.playtika.qa.carsshop.service;
 
 
-import com.playtika.qa.carsshop.dao.entity.*;
+import com.playtika.qa.carsshop.dao.entity.AdsEntity;
+import com.playtika.qa.carsshop.dao.entity.CarEntity;
+import com.playtika.qa.carsshop.dao.entity.DealEntity;
+import com.playtika.qa.carsshop.dao.entity.UserEntity;
 import com.playtika.qa.carsshop.dao.entity.repo.AdsEntityRepository;
 import com.playtika.qa.carsshop.dao.entity.repo.CarEntityRepository;
 import com.playtika.qa.carsshop.dao.entity.repo.DealEntityRepository;
@@ -36,7 +39,7 @@ public class CarServiceImpl implements CarService {
         List<CarEntity> carEntities = findCarByPlateNumber(carInStore.getCar().getPlateNumber());
         if (carEntities.isEmpty()) {
             CarEntity newCarEntity = createCarEntity(carInStore);
-            UserEntity newUserEntity = createUserEntity(carInStore);
+            UserEntity newUserEntity = findOrCreateUser(carInStore);
             AdsEntity newAds = createAndSaveAdsEntities(carInStore, newUserEntity, newCarEntity);
             setCarId(newAds, carInStore);
             return carInStore;
@@ -45,10 +48,18 @@ public class CarServiceImpl implements CarService {
         if (findOpenAdsByCarId(foundCar.getId()).size() > 0) {
             throw new CarAlreadyOnSalingException("Car already selling!");
         }
-        UserEntity newUserEntity = createUserEntity(carInStore);
+        UserEntity newUserEntity = findOrCreateUser(carInStore);
         AdsEntity newAds = createAndSaveAdsEntities(carInStore, newUserEntity, foundCar);
         setCarId(newAds, carInStore);
         return carInStore;
+    }
+
+    private UserEntity findOrCreateUser(CarInStore carInStore) {
+        List<UserEntity> userList = userRepository.findByContact(carInStore.getCarInfo().getContact());
+        if (userList.isEmpty()) {
+            return createUserEntity(carInStore);
+        }
+        return userList.get(0);
     }
 
     @Override
@@ -77,7 +88,7 @@ public class CarServiceImpl implements CarService {
     public long openNewDeal(User user, int price, long adsId) {
         AdsEntity adsEntity = adsRepository.findOne(adsId);
         if (adsEntity == null) {
-            throw new NotFoundException("Ads not found!!!");
+            throw new NotFoundException("Ads not found!");
         }
         List<UserEntity> foundUser = userRepository.findByContact(user.getContact());
         if (foundUser.isEmpty()) {

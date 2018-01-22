@@ -1,30 +1,19 @@
 package com.playtika.qa.carsshop.web;
 
 import lombok.extern.slf4j.Slf4j;
-import org.hamcrest.CoreMatchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-import java.util.regex.Matcher;
-
-import static org.hamcrest.CoreMatchers.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @Slf4j
 @RunWith(SpringRunner.class)
@@ -90,6 +79,50 @@ public class CarControllerSystemTest {
                 .accept(MediaType.APPLICATION_JSON)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+    }
+
+    @Test
+    public void rejectExistingDealReturnsOk() throws Exception {
+        String firstCar = "{\"plateNumber\": \"6\", \"color\": \"\", \"model\": \"\", \"year\": 2000 } ";
+        addCarInStore(firstCar);
+
+        String jsonString = "{\"name\": \"kot\", \"surname\": \"krot\", \"contact\": \"con1\"} ";
+        String adsId = addDeal(jsonString, "100500");
+
+        mockMvc.perform(post("/deal/reject/" + adsId)
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    public void chooseBestDealReturnsOk() throws Exception {
+        String firstCar = "{\"plateNumber\": \"7\", \"color\": \"\", \"model\": \"\", \"year\": 2000 } ";
+        addCarInStore(firstCar);
+
+        String jsonString1 = "{\"name\": \"kot\", \"surname\": \"krot\", \"contact\": \"con1\"} ";
+        String adsId1 = addDeal(jsonString1, "100500");
+        String jsonString2 = "{\"name\": \"kot2\", \"surname\": \"krot2\", \"contact\": \"con2\"} ";
+        String adsId2 = addDeal(jsonString2, "100501");
+
+        mockMvc.perform(post("/deal/accept/1")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("application/json;charset=UTF-8"))
+                .andExpect(jsonPath("$.user.name").value("kot2"))
+                .andExpect(jsonPath("$.user.surname").value("krot2"))
+                .andExpect(jsonPath("$.user.contact").value("con2"))
+                .andExpect(jsonPath("$.price").value(100501));
+    }
+
+    private String addDeal(String jsonString, String price) throws Exception {
+        return mockMvc.perform(post("/deal/?price=" + price + "&adsId=1")
+                .content(jsonString)
+                .accept(MediaType.APPLICATION_JSON)
+                .contentType(MediaType.APPLICATION_JSON))
                 .andReturn()
                 .getResponse()
                 .getContentAsString();

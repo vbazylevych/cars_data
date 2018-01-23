@@ -1,31 +1,45 @@
 package com.playtika.qa.carsshop.service;
 
-import com.playtika.qa.carsshop.dao.entity.*;
+import com.playtika.qa.carsshop.dao.entity.AdsEntity;
+import com.playtika.qa.carsshop.dao.entity.CarEntity;
+import com.playtika.qa.carsshop.dao.entity.DealEntity;
+import com.playtika.qa.carsshop.dao.entity.UserEntity;
 import com.playtika.qa.carsshop.dao.entity.repo.AdsEntityRepository;
 import com.playtika.qa.carsshop.dao.entity.repo.CarEntityRepository;
+import com.playtika.qa.carsshop.dao.entity.repo.DealEntityRepository;
+import com.playtika.qa.carsshop.dao.entity.repo.UserEntityRepository;
 import com.playtika.qa.carsshop.domain.Car;
 import com.playtika.qa.carsshop.domain.CarInStore;
 import com.playtika.qa.carsshop.domain.CarInfo;
+import com.playtika.qa.carsshop.domain.User;
 import com.playtika.qa.carsshop.web.CarAlreadyOnSalingException;
+import com.playtika.qa.carsshop.web.NotFoundException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
+import static com.playtika.qa.carsshop.dao.entity.DealEntity.Status.ACTIVATED;
 import static java.util.Arrays.asList;
-import static java.util.Collections.*;
-import static org.hamcrest.CoreMatchers.*;
+import static java.util.Collections.EMPTY_LIST;
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.samePropertyValuesAs;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.notNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class CarServiceImplTests {
+public class CarServiceImplTest {
 
     @InjectMocks
     private CarServiceImpl service;
@@ -33,6 +47,12 @@ public class CarServiceImplTests {
     private AdsEntityRepository adsRepository;
     @Mock
     private CarEntityRepository carRepository;
+
+    @Mock
+    private UserEntityRepository userRepository;
+
+    @Mock
+    private DealEntityRepository dealRepository;
 
     CarInStore first = new CarInStore(new Car(1L, "xxx"), new CarInfo(1, "Sema"));
 
@@ -150,6 +170,48 @@ public class CarServiceImplTests {
     private UserEntity createUserEntity(CarInStore carInStore) {
         UserEntity userEntity = new UserEntity("Name", "", carInStore.getCarInfo().getContact());
         return userEntity;
+    }
+
+    @Test
+    public void addNewDeal_returnsId_IfUserAndAdsPresent() {
+        AdsEntity adsEntity = new AdsEntity();
+        UserEntity userEntity = new UserEntity();
+        DealEntity dealEntity = new DealEntity(adsEntity, ACTIVATED, userEntity, 100500);
+        dealEntity.setId(1L);
+        User user = new User("kot", "krot", "con1");
+        when(adsRepository.findOne(1L)).thenReturn(adsEntity);
+        when(userRepository.findByContact("con1")).thenReturn(asList(userEntity));
+        when(dealRepository.save(notNull(DealEntity.class))).thenReturn(dealEntity);
+
+        long result = service.openNewDeal(user, 100500, 1);
+
+        assertThat(result, is(1L));
+    }
+
+    @Test
+    public void addNewDeal_createNewUserIfUserAbsent_AndReturnsDealId() {
+        AdsEntity adsEntity = new AdsEntity();
+        User user = new User("kot", "krot", "con1");
+        UserEntity userEntity = new UserEntity("kot", "krot", "con1");
+        DealEntity dealEntity = new DealEntity(adsEntity, ACTIVATED, userEntity, 100500);
+        dealEntity.setId(1L);
+
+        when(adsRepository.findOne(1L)).thenReturn(adsEntity);
+        when(userRepository.findByContact("con1")).thenReturn(EMPTY_LIST);
+        when(dealRepository.save(notNull(DealEntity.class))).thenReturn(dealEntity);
+
+        long result = service.openNewDeal(user, 100500, 1);
+        ArgumentCaptor<UserEntity> argument = ArgumentCaptor.forClass(UserEntity.class);
+        verify(userRepository).save(argument.capture());
+        assertThat(argument.getAllValues().get(0), samePropertyValuesAs(userEntity));
+        assertThat(result, is(1L));
+    }
+
+    @Test(expected = NotFoundException.class)
+    public void addNewDeal_throwNotFoundException_IfAdsIsAbsent() {
+        when(adsRepository.findOne(1L)).thenReturn(null);
+        service.openNewDeal(new User(), 100500, 1);
+
     }
 }
 

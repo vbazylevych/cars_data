@@ -179,7 +179,7 @@ public class CarServiceImpl implements CarService {
         adsRepository.save(foundAds);
     }
 
-    DealEntity findTheBestDeal(long id) {
+    private DealEntity findTheBestDeal(long id) {
         return dealRepository.findByAdsId(id).stream()
                 .max(Comparator.comparing(DealEntity::getPrice))
                 .orElseThrow(() -> new NotFoundException("You haven't any deals!"));

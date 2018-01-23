@@ -8,10 +8,7 @@ import com.playtika.qa.carsshop.dao.entity.repo.AdsEntityRepository;
 import com.playtika.qa.carsshop.dao.entity.repo.CarEntityRepository;
 import com.playtika.qa.carsshop.dao.entity.repo.DealEntityRepository;
 import com.playtika.qa.carsshop.dao.entity.repo.UserEntityRepository;
-import com.playtika.qa.carsshop.domain.Car;
-import com.playtika.qa.carsshop.domain.CarInStore;
-import com.playtika.qa.carsshop.domain.CarInfo;
-import com.playtika.qa.carsshop.domain.User;
+import com.playtika.qa.carsshop.domain.*;
 import com.playtika.qa.carsshop.web.CantRejectAcceptedDeal;
 import com.playtika.qa.carsshop.web.CarAlreadyOnSalingException;
 import com.playtika.qa.carsshop.web.NotFoundException;
@@ -56,6 +53,11 @@ public class CarServiceImplTest {
     private DealEntityRepository dealRepository;
 
     CarInStore first = new CarInStore(new Car(1L, "xxx"), new CarInfo(1, "Sema"));
+    AdsEntity adsEntity = new AdsEntity();
+    User user = new User("kot", "krot", "con1");
+    UserEntity userEntity = new UserEntity("kot", "krot", "con1");
+    DealEntity dealEntity = new DealEntity(adsEntity, ACTIVATED, userEntity, 100500);
+    DealEntity dealEntity2 = new DealEntity(adsEntity, ACTIVATED, userEntity, 100501);
 
     @Test
     public void addNewAdsThenCarIsAbsent() {
@@ -155,9 +157,9 @@ public class CarServiceImplTest {
     }
 
     private AdsEntity createAdsEntities(CarInStore carInStore, UserEntity user, CarEntity car) {
-        AdsEntity adsEntity = new AdsEntity(user, car,
+        AdsEntity createdAdsEntity = new AdsEntity(user, car,
                 carInStore.getCarInfo().getPrice(), null);
-        return adsEntity;
+        return createdAdsEntity;
     }
 
     private CarEntity createCarEntity(CarInStore carInStore, Long id) {
@@ -169,32 +171,24 @@ public class CarServiceImplTest {
     }
 
     private UserEntity createUserEntity(CarInStore carInStore) {
-        UserEntity userEntity = new UserEntity("Name", "", carInStore.getCarInfo().getContact());
-        return userEntity;
+        UserEntity createdUserEntity = new UserEntity("Name", "", carInStore.getCarInfo().getContact());
+        return createdUserEntity;
     }
 
     @Test
     public void addNewDeal_returnsId_IfUserAndAdsPresent() {
-        AdsEntity adsEntity = new AdsEntity();
-        UserEntity userEntity = new UserEntity();
-        DealEntity dealEntity = new DealEntity(adsEntity, ACTIVATED, userEntity, 100500);
         dealEntity.setId(1L);
-        User user = new User("kot", "krot", "con1");
+
         when(adsRepository.findOne(1L)).thenReturn(adsEntity);
         when(userRepository.findByContact("con1")).thenReturn(asList(userEntity));
         when(dealRepository.save(notNull(DealEntity.class))).thenReturn(dealEntity);
 
         long result = service.openNewDeal(user, 100500, 1);
-
         assertThat(result, is(1L));
     }
 
     @Test
     public void addNewDeal_createNewUserIfUserAbsent_AndReturnsDealId() {
-        AdsEntity adsEntity = new AdsEntity();
-        User user = new User("kot", "krot", "con1");
-        UserEntity userEntity = new UserEntity("kot", "krot", "con1");
-        DealEntity dealEntity = new DealEntity(adsEntity, ACTIVATED, userEntity, 100500);
         dealEntity.setId(1L);
 
         when(adsRepository.findOne(1L)).thenReturn(adsEntity);
@@ -216,8 +210,6 @@ public class CarServiceImplTest {
 
     @Test
     public void rejectDeal_successful_IfDealPresent() {
-
-        DealEntity dealEntity = new DealEntity(new AdsEntity(), ACTIVATED, new UserEntity(), 100500);
         dealEntity.setId(1L);
 
         when(dealRepository.findOne(1L)).thenReturn(dealEntity);
@@ -231,17 +223,76 @@ public class CarServiceImplTest {
 
     @Test(expected = CantRejectAcceptedDeal.class)
     public void rejectDeal_throwsCantRejectAcceptedDeal_IfDealAlreadyAccepted() {
-
-        DealEntity dealEntity = new DealEntity(new AdsEntity(), ACCEPTED, new UserEntity(), 100500);
         dealEntity.setId(1L);
+        dealEntity.setStatus(ACCEPTED);
 
         when(dealRepository.findOne(1L)).thenReturn(dealEntity);
         service.rejectDeal(1);
     }
+
     @Test(expected = NotFoundException.class)
     public void rejectDeal_throwsNotFoundException_IfDealisAbsent() {
         when(dealRepository.findOne(1L)).thenReturn(null);
         service.rejectDeal(1);
+    }
+
+    @Test
+    public void acceptBestDeal_ChangeStatusOfDealAsAccepted_IfDealAndAdsPresent() {
+        when(adsRepository.findByIdAndDealIsNull(1L)).thenReturn(asList(adsEntity));
+        when(dealRepository.findByAdsId(1)).thenReturn(createDealEntityList());
+
+        ArgumentCaptor<DealEntity> argument = ArgumentCaptor.forClass(DealEntity.class);
+        dealEntity2.setStatus(ACCEPTED);
+        service.acceptTheBestDeal(1L);
+        verify(dealRepository).save(argument.capture());
+        assertThat(argument.getAllValues().get(0), samePropertyValuesAs(dealEntity2));
+    }
+
+    @Test
+    public void acceptBestDeal_CloseAdsWithDealId_IfDealAndAdsPresent() {
+        when(adsRepository.findByIdAndDealIsNull(1L)).thenReturn(asList(adsEntity));
+        when(dealRepository.findByAdsId(1)).thenReturn(createDealEntityList());
+
+        service.acceptTheBestDeal(1L);
+        ArgumentCaptor<AdsEntity> adsArgument = ArgumentCaptor.forClass(AdsEntity.class);
+        adsEntity.setDeal(dealEntity2);
+        verify(adsRepository).save(adsArgument.capture());
+        assertThat(adsArgument.getAllValues().get(0), samePropertyValuesAs(adsEntity));
+    }
+
+    @Test
+    public void acceptBestDeal_ReturnCorrectResponse_IfDealAndAdsPresent() {
+        when(adsRepository.findByIdAndDealIsNull(1L)).thenReturn(asList(adsEntity));
+        when(dealRepository.findByAdsId(1)).thenReturn(createDealEntityList());
+
+        BestDealResponse bestDealResponse = service.acceptTheBestDeal(1);
+        BestDealResponse expectedBestDealResponse = new BestDealResponse(user, 100501, 1);
+
+        assertThat(bestDealResponse.getUser(), samePropertyValuesAs(expectedBestDealResponse.getUser()));
+        assertThat(bestDealResponse.getPrice(), is(100501));
+        assertThat(bestDealResponse.getId(), is(1L));
+    }
+
+    @Test(expected = NotFoundException.class)
+    public void acceptBestDeal_ThrowsNotFoundException_IfAdsAbsent() {
+        when(adsRepository.findByIdAndDealIsNull(1L)).thenThrow(NotFoundException.class);
+        service.acceptTheBestDeal(1);
+    }
+
+    @Test(expected = NotFoundException.class)
+    public void acceptBestDeal_ThrowsNotFoundException_IfDealAbsent() {
+        when(dealRepository.findByAdsId(1L)).thenThrow(NotFoundException.class);
+        service.acceptTheBestDeal(1);
+    }
+
+
+    private List<DealEntity> createDealEntityList() {
+        List<DealEntity> dealEntityList = new ArrayList<>();
+        dealEntity.setId(1L);
+        dealEntity2.setId(1L);
+        dealEntityList.add(dealEntity);
+        dealEntityList.add(dealEntity2);
+        return dealEntityList;
     }
 }
 

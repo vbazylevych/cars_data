@@ -21,6 +21,7 @@ import javax.transaction.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.playtika.qa.carsshop.dao.entity.DealEntity.Status.ACCEPTED;
 import static com.playtika.qa.carsshop.dao.entity.DealEntity.Status.ACTIVATED;
 
 @Slf4j
@@ -115,9 +116,15 @@ public class CarServiceImpl implements CarService {
         if (openAds.isEmpty()) {
             throw new NotFoundException("Open ads with id " + id + " not found!");
         }
-        DealEntity bestDeal = findTheBestDeal(id);
+        DealEntity bestDeal = findBestDeal(id);
+        acceptBesDeal(bestDeal);
         closeAds(openAds.get(0), bestDeal);
         return createBestDealResponse(bestDeal);
+    }
+
+    private void acceptBesDeal(DealEntity bestDeal) {
+        bestDeal.setStatus(ACCEPTED);
+        dealRepository.save(bestDeal);
     }
 
     private AdsEntity createAndSaveAdsEntities(CarInStore carInStore, UserEntity user, CarEntity car) {
@@ -175,7 +182,7 @@ public class CarServiceImpl implements CarService {
         adsRepository.save(foundAds);
     }
 
-    private DealEntity findTheBestDeal(long id) {
+    private DealEntity findBestDeal(long id) {
         return dealRepository.findByAdsId(id).stream()
                 .max(Comparator.comparing(DealEntity::getPrice))
                 .orElseThrow(() -> new NotFoundException("You haven't any deals!"));

@@ -285,7 +285,6 @@ public class CarServiceImplTest {
         service.acceptTheBestDeal(1);
     }
 
-
     private List<DealEntity> createDealEntityList() {
         List<DealEntity> dealEntityList = new ArrayList<>();
         dealEntity.setId(1L);

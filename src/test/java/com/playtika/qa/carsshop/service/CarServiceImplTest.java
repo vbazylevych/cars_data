@@ -12,6 +12,7 @@ import com.playtika.qa.carsshop.domain.Car;
 import com.playtika.qa.carsshop.domain.CarInStore;
 import com.playtika.qa.carsshop.domain.CarInfo;
 import com.playtika.qa.carsshop.domain.User;
+import com.playtika.qa.carsshop.web.CantRejectAcceptedDeal;
 import com.playtika.qa.carsshop.web.CarAlreadyOnSalingException;
 import com.playtika.qa.carsshop.web.NotFoundException;
 import org.junit.Test;
@@ -25,7 +26,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static com.playtika.qa.carsshop.dao.entity.DealEntity.Status.ACTIVATED;
+import static com.playtika.qa.carsshop.dao.entity.DealEntity.Status.*;
 import static java.util.Arrays.asList;
 import static java.util.Collections.EMPTY_LIST;
 import static org.hamcrest.CoreMatchers.hasItem;
@@ -211,7 +212,36 @@ public class CarServiceImplTest {
     public void addNewDeal_throwNotFoundException_IfAdsIsAbsent() {
         when(adsRepository.findOne(1L)).thenReturn(null);
         service.openNewDeal(new User(), 100500, 1);
+    }
 
+    @Test
+    public void rejectDeal_successful_IfDealPresent() {
+
+        DealEntity dealEntity = new DealEntity(new AdsEntity(), ACTIVATED, new UserEntity(), 100500);
+        dealEntity.setId(1L);
+
+        when(dealRepository.findOne(1L)).thenReturn(dealEntity);
+        service.rejectDeal(1);
+
+        ArgumentCaptor<DealEntity> argument = ArgumentCaptor.forClass(DealEntity.class);
+        dealEntity.setStatus(REJECTED);
+        verify(dealRepository).save(argument.capture());
+        assertThat(argument.getAllValues().get(0), samePropertyValuesAs(dealEntity));
+    }
+
+    @Test(expected = CantRejectAcceptedDeal.class)
+    public void rejectDeal_throwsCantRejectAcceptedDeal_IfDealAlreadyAccepted() {
+
+        DealEntity dealEntity = new DealEntity(new AdsEntity(), ACCEPTED, new UserEntity(), 100500);
+        dealEntity.setId(1L);
+
+        when(dealRepository.findOne(1L)).thenReturn(dealEntity);
+        service.rejectDeal(1);
+    }
+    @Test(expected = NotFoundException.class)
+    public void rejectDeal_throwsNotFoundException_IfDealisAbsent() {
+        when(dealRepository.findOne(1L)).thenReturn(null);
+        service.rejectDeal(1);
     }
 }
 

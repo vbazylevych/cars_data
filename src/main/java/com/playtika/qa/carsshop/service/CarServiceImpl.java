@@ -10,6 +10,7 @@ import com.playtika.qa.carsshop.dao.entity.repo.CarEntityRepository;
 import com.playtika.qa.carsshop.dao.entity.repo.DealEntityRepository;
 import com.playtika.qa.carsshop.dao.entity.repo.UserEntityRepository;
 import com.playtika.qa.carsshop.domain.*;
+import com.playtika.qa.carsshop.web.CantRejectAcceptedDeal;
 import com.playtika.qa.carsshop.web.CarAlreadyOnSalingException;
 import com.playtika.qa.carsshop.web.NotFoundException;
 import lombok.AllArgsConstructor;
@@ -52,14 +53,6 @@ public class CarServiceImpl implements CarService {
         AdsEntity newAds = createAndSaveAdsEntities(carInStore, newUserEntity, foundCar);
         setCarId(newAds, carInStore);
         return carInStore;
-    }
-
-    private UserEntity findOrCreateUser(CarInStore carInStore) {
-        List<UserEntity> userList = userRepository.findByContact(carInStore.getCarInfo().getContact());
-        if (userList.isEmpty()) {
-            return createUserEntity(carInStore);
-        }
-        return userList.get(0);
     }
 
     @Override
@@ -105,6 +98,9 @@ public class CarServiceImpl implements CarService {
         DealEntity foundDeal = dealRepository.findOne(id);
         if (foundDeal == null) {
             throw new NotFoundException("Deal not found!");
+        }
+        if (foundDeal.getStatus() == DealEntity.Status.ACCEPTED) {
+            throw new CantRejectAcceptedDeal("Can't reject accepted deal!");
         }
         foundDeal.setStatus(DealEntity.Status.REJECTED);
         dealRepository.save(foundDeal);
@@ -191,5 +187,13 @@ public class CarServiceImpl implements CarService {
                 carEntity.getModel(), carEntity.getColor(), carEntity.getYear());
         CarInfo carInfo = new CarInfo(ads.getPrice(), ads.getUser().getContact());
         return new CarInStore(car, carInfo);
+    }
+
+    private UserEntity findOrCreateUser(CarInStore carInStore) {
+        List<UserEntity> userList = userRepository.findByContact(carInStore.getCarInfo().getContact());
+        if (userList.isEmpty()) {
+            return createUserEntity(carInStore);
+        }
+        return userList.get(0);
     }
 }

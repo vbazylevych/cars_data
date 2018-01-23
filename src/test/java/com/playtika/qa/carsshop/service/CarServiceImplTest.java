@@ -113,7 +113,6 @@ public class CarServiceImplTest {
     public void allCarsReturnsListOfAdsIfPresent() {
 
         CarInStore second = new CarInStore(new Car(2L, "2"), new CarInfo(2, "с2"));
-
         AdsEntity firstAds = createAdsEntities(first, createUserEntity(first), createCarEntity(first, 1L));
         AdsEntity secondAds = createAdsEntities(second, createUserEntity(second), createCarEntity(second, 2L));
 
@@ -138,6 +137,7 @@ public class CarServiceImplTest {
     public void getCarReturnsAppropriateCarInfo() {
 
         AdsEntity firstAds = createAdsEntities(first, createUserEntity(first), createCarEntity(first, 1L));
+
         when(adsRepository.findByCarIdAndDealIsNull(1)).thenReturn(asList(firstAds));
 
         assertThat(1, is(service.get(1).get().getCarInfo().getPrice()));
@@ -156,27 +156,9 @@ public class CarServiceImplTest {
         verify(carRepository).delete(1L);
     }
 
-    private AdsEntity createAdsEntities(CarInStore carInStore, UserEntity user, CarEntity car) {
-        AdsEntity createdAdsEntity = new AdsEntity(user, car,
-                carInStore.getCarInfo().getPrice(), null);
-        return createdAdsEntity;
-    }
-
-    private CarEntity createCarEntity(CarInStore carInStore, Long id) {
-        Car newCar = carInStore.getCar();
-        CarEntity carEntity = new CarEntity(newCar.getPlateNumber(),
-                newCar.getModel(), newCar.getYear(), newCar.getColor());
-        carEntity.setId(id);
-        return carEntity;
-    }
-
-    private UserEntity createUserEntity(CarInStore carInStore) {
-        UserEntity createdUserEntity = new UserEntity("Name", "", carInStore.getCarInfo().getContact());
-        return createdUserEntity;
-    }
-
     @Test
     public void addNewDeal_returnsId_IfUserAndAdsPresent() {
+
         dealEntity.setId(1L);
 
         when(adsRepository.findOne(1L)).thenReturn(adsEntity);
@@ -189,6 +171,7 @@ public class CarServiceImplTest {
 
     @Test
     public void addNewDeal_createNewUserIfUserAbsent_AndReturnsDealId() {
+
         dealEntity.setId(1L);
 
         when(adsRepository.findOne(1L)).thenReturn(adsEntity);
@@ -210,6 +193,7 @@ public class CarServiceImplTest {
 
     @Test
     public void rejectDeal_successful_IfDealPresent() {
+
         dealEntity.setId(1L);
 
         when(dealRepository.findOne(1L)).thenReturn(dealEntity);
@@ -223,6 +207,7 @@ public class CarServiceImplTest {
 
     @Test(expected = CantRejectAcceptedDeal.class)
     public void rejectDeal_throwsCantRejectAcceptedDeal_IfDealAlreadyAccepted() {
+
         dealEntity.setId(1L);
         dealEntity.setStatus(ACCEPTED);
 
@@ -283,6 +268,25 @@ public class CarServiceImplTest {
     public void acceptBestDeal_ThrowsNotFoundException_IfDealAbsent() {
         when(dealRepository.findByAdsId(1L)).thenThrow(NotFoundException.class);
         service.acceptTheBestDeal(1);
+    }
+
+    private AdsEntity createAdsEntities(CarInStore carInStore, UserEntity user, CarEntity car) {
+        AdsEntity createdAdsEntity = new AdsEntity(user, car,
+                carInStore.getCarInfo().getPrice(), null);
+        return createdAdsEntity;
+    }
+
+    private CarEntity createCarEntity(CarInStore carInStore, Long id) {
+        Car newCar = carInStore.getCar();
+        CarEntity carEntity = new CarEntity(newCar.getPlateNumber(),
+                newCar.getModel(), newCar.getYear(), newCar.getColor());
+        carEntity.setId(id);
+        return carEntity;
+    }
+
+    private UserEntity createUserEntity(CarInStore carInStore) {
+        UserEntity createdUserEntity = new UserEntity("Name", "", carInStore.getCarInfo().getContact());
+        return createdUserEntity;
     }
 
     private List<DealEntity> createDealEntityList() {

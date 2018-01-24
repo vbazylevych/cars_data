@@ -2,6 +2,7 @@ package com.playtika.qa.carsshop.web;
 
 import com.playtika.qa.carsshop.domain.*;
 import com.playtika.qa.carsshop.service.CarService;
+import com.playtika.qa.carsshop.web.exceptions.NotFoundException;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;

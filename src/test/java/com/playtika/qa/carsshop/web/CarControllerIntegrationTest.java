@@ -2,6 +2,7 @@ package com.playtika.qa.carsshop.web;
 
 import com.playtika.qa.carsshop.domain.*;
 import com.playtika.qa.carsshop.service.CarService;
+import com.playtika.qa.carsshop.web.exceptions.NotFoundException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -153,7 +154,7 @@ public class CarControllerIntegrationTest {
     }
 
     @Test
-    public void rejectNotExistingDealReturnNotFound() throws Exception {
+    public void rejectNotExistingDealReturnsNotFound() throws Exception {
         doThrow(new NotFoundException("Deal not found!"))
                 .when(carService).rejectDeal(1);
 

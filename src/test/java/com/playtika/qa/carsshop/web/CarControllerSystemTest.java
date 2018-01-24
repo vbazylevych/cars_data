@@ -89,7 +89,7 @@ public class CarControllerSystemTest {
         String firstCar = "{\"plateNumber\": \"6\", \"color\": \"\", \"model\": \"\", \"year\": 2000 } ";
         addCarInStore(firstCar);
 
-        String jsonString = "{\"name\": \"kot\", \"surname\": \"krot\", \"contact\": \"con1\"} ";
+        String jsonString = "{\"name\": \"kot\", \"surname\": \"krot\", \"contact\": \"con1\"}";
         String adsId = addDeal(jsonString, "100500");
 
         mockMvc.perform(post("/deal/reject/" + adsId)
@@ -104,9 +104,9 @@ public class CarControllerSystemTest {
         addCarInStore(firstCar);
 
         String jsonString1 = "{\"name\": \"kot\", \"surname\": \"krot\", \"contact\": \"con1\"} ";
-        String adsId1 = addDeal(jsonString1, "100500");
+        addDeal(jsonString1, "100500");
         String jsonString2 = "{\"name\": \"kot2\", \"surname\": \"krot2\", \"contact\": \"con2\"} ";
-        String adsId2 = addDeal(jsonString2, "100501");
+        addDeal(jsonString2, "100501");
 
         mockMvc.perform(post("/deal/accept/1")
                 .accept(MediaType.APPLICATION_JSON))
